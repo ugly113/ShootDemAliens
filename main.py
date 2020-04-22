@@ -5,15 +5,21 @@ import random
 
 
 pygame.font.init()
+pygame.mixer.init()
 
 WIDTH, HEIGHT = 750, 750
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shoot Dem Aliens!")
 
+
+# Load sounds
+LASER_GUN = pygame.mixer.music.load(os.path.join("assets", "laser.ogg"))
+
 # Load images
 RED_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_red_small.png"))
 GREEN_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_green_small.png"))
 BLUE_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_blue_small.png"))
+HEALTH = pygame.image.load(os.path.join("assets", "health.png"))
 
 # Player player
 YELLOW_SPACE_SHIP = pygame.image.load(os.path.join("assets", "pixel_ship_yellow.png"))
@@ -35,6 +41,26 @@ high_score_file.close()
 high_score.append(highscore)
 
 
+class Bonuses:
+    def __init__(self, x, y, img):
+        self.x = x
+        self.y = y
+        self.img = HEALTH
+        self.mask = pygame.mask.from_surface(self.img)
+
+    def draw(self, window):
+        window.blit(self.img, (self.x, self.y))
+
+    def move(self, vel):
+        self.y += vel
+
+    def off_screen(self, height):
+        return not(self.y < height and self.y >= 0)
+
+    def collision(self, obj):
+        return collide(obj, self)
+
+
 class Laser:
     def __init__(self, x, y, img):
         self.x = x
@@ -53,6 +79,7 @@ class Laser:
 
     def collision(self, obj):
         return collide(obj, self)
+
 
 class Ship:
     COOLDOWN = 30
@@ -96,6 +123,7 @@ class Ship:
 
     def shoot(self):
         if self.cool_down_counter == 0:
+#            pygame.mixer.music.play()
             laser = Laser(self.x, self.y, self.laser_img)
             self.lasers.append(laser)
             self.cool_down_counter = 1
@@ -127,6 +155,7 @@ class Player(Ship):
                         self.players_score()
                         if laser in self.lasers:
                             self.lasers.remove(laser)
+
 
     def draw(self, window):
         main_font = pygame.font.SysFont("comicsans", 50)
@@ -178,8 +207,11 @@ def main():
     lost_font = pygame.font.SysFont("comicsans", 60)
 
     enemies = []
+    health_bonus = []
+    health_bonuses = 1
     wave_length = 3
     enemy_vel = 1
+    health_vel = 1
 
     player_vel = 5
     laser_vel = 5
@@ -210,6 +242,9 @@ def main():
 
         player.draw(WIN)
 
+        for bonus in health_bonus:
+            bonus.draw(WIN)
+
         if lost:
             write_score()
             lost_label = lost_font.render("GAME OVER!", 1, (255, 255, 255))
@@ -236,6 +271,8 @@ def main():
         if len(enemies) == 0:
             level += 1
             wave_length += 3
+            bonus = Bonuses(random.randrange(50, WIDTH-100), random.randrange(-1500, -100), HEALTH)
+            health_bonus.append(bonus)
             for i in range(wave_length):
                 enemy = Enemy(random.randrange(50, WIDTH-100), random.randrange(-1500, -100), random.choice(["red", "blue", "green"]))
                 enemies.append(enemy)
@@ -255,6 +292,14 @@ def main():
             player.y += player_vel
         if keys[pygame.K_SPACE]:
             player.shoot()
+
+        for bonus in health_bonus[:]:
+            bonus.move(health_vel)
+
+            if collide(bonus, player):
+                if player.health < 100:
+                    player.health += 10
+                health_bonus.clear()
 
         for enemy in enemies[:]:
             enemy.move(enemy_vel)
@@ -292,5 +337,5 @@ def main_menu():
 
     pygame.quit()
 
-if __name__ == __main__:
+if __name__ == "__main__":
     main_menu()
