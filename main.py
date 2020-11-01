@@ -113,7 +113,7 @@ class Ship:
         if self.cool_down_counter >= self.COOLDOWN:
             self.cool_down_counter = 0
         elif self.cool_down_counter > 0:
-            self.cool_down_counter += 1
+            self.cool_down_counter += 2
 
     def players_score(self):
         self.score += 100
@@ -126,7 +126,7 @@ class Ship:
 #            pygame.mixer.music.play()
             laser = Laser(self.x, self.y, self.laser_img)
             self.lasers.append(laser)
-            self.cool_down_counter = 1
+            self.cool_down_counter = 2
 
     def get_width(self):
         return self.ship_img.get_width()
